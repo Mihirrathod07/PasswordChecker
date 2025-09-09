@@ -7,9 +7,11 @@ import random
 import json
 import os
 
+# --- File paths ---
 DATA_FILE = "password_data.json"
+LOG_FILE = "usage_stats.txt"
 
-# --- Load & Save password data ---
+# --- Load & Save password mapping ---
 def load_password_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
@@ -21,7 +23,7 @@ def save_password_data(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-# --- Password strength ---
+# --- Password strength check ---
 def check_strength(password):
     strength_points = 0
     feedback = []
@@ -81,6 +83,12 @@ def generate_strong_password(length=16):
     random.shuffle(password)
     return ''.join(password)
 
+# --- Safe logging function ---
+def log_usage(password, strength):
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+    with open(LOG_FILE, "a") as f:
+        f.write(f"{hashed_password} | {strength}\n")
+
 # --- Streamlit UI ---
 st.title("🔒 Password Strength & Breach Checker")
 
@@ -100,6 +108,9 @@ if st.button("Check Password"):
     breach_result = check_breach(user_password)
     st.subheader("Breach Check")
     st.write(breach_result)
+
+    # Safe logging
+    log_usage(user_password, strength)
 
     # Suggest strong password if weak or breached
     if strength != "Strong password ✅" or "⚠️" in breach_result:

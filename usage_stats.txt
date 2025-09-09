@@ -1,0 +1,2 @@
+a3f5c9e2... | Weak password ❌
+b1d7e4f9... | Moderate password ⚠️
