@@ -87,30 +87,33 @@ st.title("🔒 Password Strength & Breach Checker")
 user_password = st.text_input("Enter your password:", type="password")
 
 if st.button("Check Password"):
-    password_data = load_password_data()
-
-    # Strength
-    strength, feedback = check_strength(user_password)
-    st.subheader("Password Strength")
-    st.write(strength)
-    for f in feedback:
-        st.write("- " + f)
-
-    # Breach
-    breach_result = check_breach(user_password)
-    st.subheader("Breach Check")
-    st.write(breach_result)
-
-    # Suggest strong password if weak or breached
-    if strength != "Strong password ✅" or "⚠️" in breach_result:
-        if user_password in password_data:
-            new_password = password_data[user_password]
-        else:
-            new_password = generate_strong_password()
-            password_data[user_password] = new_password
-            save_password_data(password_data)
-
-        st.subheader("Suggested Strong Password")
-        st.code(new_password)
+    if not user_password.strip():  # Check if input is empty or only spaces
+        st.error("❌ Please enter a password first.")
     else:
-        st.success("Your password is strong and safe! ✅")
+        password_data = load_password_data()
+
+        # Strength
+        strength, feedback = check_strength(user_password)
+        st.subheader("Password Strength")
+        st.write(strength)
+        for f in feedback:
+            st.write("- " + f)
+
+        # Breach
+        breach_result = check_breach(user_password)
+        st.subheader("Breach Check")
+        st.write(breach_result)
+
+        # Suggest strong password if weak or breached
+        if strength != "Strong password ✅" or "⚠️" in breach_result:
+            if user_password in password_data:
+                new_password = password_data[user_password]
+            else:
+                new_password = generate_strong_password()
+                password_data[user_password] = new_password
+                save_password_data(password_data)
+
+            st.subheader("Suggested Strong Password")
+            st.code(new_password)
+        else:
+            st.success("Your password is strong and safe! ✅")
