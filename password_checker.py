@@ -1,4 +1,3 @@
-import streamlit as st
 import re
 import hashlib
 import requests
@@ -9,7 +8,7 @@ import os
 
 DATA_FILE = "password_data.json"
 
-# --- Load & Save password data ---
+# Load stored password mapping
 def load_password_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
@@ -17,11 +16,12 @@ def load_password_data():
     else:
         return {}
 
+# Save mapping
 def save_password_data(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-# --- Password strength ---
+# Password strength check (same as before)
 def check_strength(password):
     strength_points = 0
     feedback = []
@@ -53,64 +53,75 @@ def check_strength(password):
     else:
         return "Weak password ❌", feedback
 
-# --- Breach check ---
+# Breach check (same as before)
 def check_breach(password):
     sha1pass = hashlib.sha1(password.encode('utf-8')).hexdigest().upper()
     first5, tail = sha1pass[:5], sha1pass[5:]
+
     url = f"https://api.pwnedpasswords.com/range/{first5}"
     response = requests.get(url)
 
     if response.status_code != 200:
-        return "Error checking breach."
+        return "Error: Could not check breach status (API issue)."
 
     hashes = (line.split(':') for line in response.text.splitlines())
     for h, count in hashes:
         if h == tail:
-            return f"⚠️ Found {count} times in data breaches!"
-    return "✅ Not found in breaches."
+            return f"⚠️ Password found {count} times in data breaches!"
+    return "✅ Password not found in breaches."
 
-# --- Generate strong password ---
+# Generate a strong password
 def generate_strong_password(length=16):
     upper = string.ascii_uppercase
     lower = string.ascii_lowercase
     digits = string.digits
     special = "@$!%*?&"
-    password = [random.choice(upper), random.choice(lower), random.choice(digits), random.choice(special)]
+
+    password = [
+        random.choice(upper),
+        random.choice(lower),
+        random.choice(digits),
+        random.choice(special)
+    ]
+
     all_chars = upper + lower + digits + special
     password += random.choices(all_chars, k=length-4)
     random.shuffle(password)
+
     return ''.join(password)
 
-# --- Streamlit UI ---
-st.title("🔒 Password Strength & Breach Checker")
-
-user_password = st.text_input("Enter your password:", type="password")
-
-if st.button("Check Password"):
+# Main function
+def main():
     password_data = load_password_data()
+    password = input("Enter a password to check: ")
 
-    # Strength
-    strength, feedback = check_strength(user_password)
-    st.subheader("Password Strength")
-    st.write(strength)
-    for f in feedback:
-        st.write("- " + f)
+    # Strength check
+    print("\n[Password Strength]")
+    strength, feedback = check_strength(password)
+    print(strength)
+    if feedback:
+        for f in feedback:
+            print("- " + f)
 
-    # Breach
-    breach_result = check_breach(user_password)
-    st.subheader("Breach Check")
-    st.write(breach_result)
+    # Breach check
+    print("\n[Breach Check]")
+    breach_result = check_breach(password)
+    print(breach_result)
 
     # Suggest strong password if weak or breached
     if strength != "Strong password ✅" or "⚠️" in breach_result:
-        if user_password in password_data:
-            new_password = password_data[user_password]
+        # Check if we already generated a strong password for this input
+        if password in password_data:
+            new_password = password_data[password]
         else:
             new_password = generate_strong_password()
-            password_data[user_password] = new_password
+            password_data[password] = new_password
             save_password_data(password_data)
 
-        st.subheader("Suggested Strong Password")
-        st.code(new_password)
+        print("\n[Suggested Strong Password]")
+        print(f"Here is a strong password you can use: {new_password}")
     else:
-        st.success("Your password is strong and safe! ✅")
+        print("\nYour password is strong and safe! ✅")
+
+if __name__ == "__main__":
+    main()
